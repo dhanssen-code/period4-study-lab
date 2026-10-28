@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Period 4 APUSH Study Lab</title>
+<style>
+  :root { --navy:#1f3a5f; --accent:#c8102e; --bg:#f5f6f8; --card:#ffffff; --good:#2e7d32; --bad:#c62828; }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; color: #222; line-height: 1.5; }
+  header { background: var(--navy); color: #fff; padding: 16px 20px; }
+  header h1 { margin: 0; font-size: 1.4rem; }
+  header p { margin: 4px 0 0; font-size: 0.95rem; opacity: 0.85; }
+  main { max-width: 760px; margin: 0 auto; padding: 20px; }
+  .card { background: var(--card); border-radius: 10px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  h2 { color: var(--navy); margin-top: 0; }
+  button { font: inherit; background: var(--navy); color: #fff; border: none; border-radius: 8px; padding: 12px 18px; cursor: pointer; margin: 4px 4px 4px 0; min-height: 44px; }
+  button:hover { opacity: 0.9; }
+  button.secondary { background: #6b7a8f; }
+  button.choice { display: block; width: 100%; text-align: left; background: #fff; color: #222; border: 2px solid #cfd6e0; margin: 8px 0; }
+  button.choice.correct { border-color: var(--good); background: #e8f5e9; }
+  button.choice.wrong { border-color: var(--bad); background: #ffebee; }
+  button:disabled { cursor: default; }
+  input[type=text], input[type=number] { font: inherit; padding: 10px; border: 2px solid #cfd6e0; border-radius: 8px; width: 100%; min-height: 44px; }
+  input[type=number] { width: 120px; }
+  .hidden { display: none; }
+  .muted { color: #666; font-size: 0.95rem; }
+  .feedback { margin-top: 12px; padding: 12px; border-radius: 8px; background: #eef3fa; }
+  .progress { font-size: 0.9rem; color: #555; margin-bottom: 8px; }
+  .event { display: flex; gap: 10px; align-items: center; border: 1px solid #d6dde8; border-radius: 8px; padding: 10px; margin-bottom: 8px; background: #fff; flex-wrap: wrap; }
+  .event .label { flex: 1; min-width: 200px; }
+  .event.right { background: #e8f5e9; border-color: var(--good); }
+  .event.wrong { background: #ffebee; border-color: var(--bad); }
+  .score-big { font-size: 2rem; color: var(--navy); font-weight: bold; }
+  ul.tips li { margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Period 4 APUSH Study Lab</h1>
+  <p>Vocabulary, content practice, and timeline building for 1800–1848</p>
+</header>
+<main>
+
+<!-- LOGIN -->
+<section id="screen-login" class="card">
+  <h2>Welcome</h2>
+  <p>Enter your name exactly as it appears on the class roster, and your period. Your teacher can see which activities you completed.</p>
+  <label for="name">Full name</label>
+  <input type="text" id="name" placeholder="First Last" autocomplete="name">
+  <label for="period" style="display:block;margin-top:12px;">Period</label>
+  <input type="text" id="period" placeholder="4">
+  <p><button onclick="saveLogin()">Start Studying</button></p>
+  <p class="muted" id="login-error"></p>
+</section>
+
+<!-- MENU -->
+<section id="screen-menu" class="hidden">
+  <div class="card">
+    <h2 id="greeting">Study Menu</h2>
+    <p>Work through all three activities. Every activity you finish is recorded for your teacher.</p>
+    <button onclick="showScreen('screen-vocab'); startVocab();">1. Vocabulary Quiz</button>
+    <button onclick="showScreen('screen-content'); startContent();">2. Content Quiz</button>
+    <button onclick="showScreen('screen-timeline'); startTimeline();">3. Timeline Builder</button>
+    <button class="secondary" onclick="showProgress()">My Progress on This Device</button>
+    <button class="secondary" onclick="logout()">Switch Student</button>
+  </div>
+  <div class="card">
+    <h2>Study Tips</h2>
+    <ul class="tips">
+      <li>Read each vocabulary word and say its meaning out loud before you check the answer.</li>
+      <li>After each content question, look up the topic in your notes if you missed it.</li>
+      <li>Build the timeline without looking at your notes first, then check yourself.</li>
+      <li>Words such as <em>EXCEPT</em>, <em>NOT</em>, and <em>best</em> change what a question is asking. Learn them here.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- VOCAB -->
+<section id="screen-vocab" class="card hidden">
+  <h2>Vocabulary Quiz</h2>
+  <div id="vocab-area"></div>
+</section>
+
+<!-- CONTENT -->
+<section id="screen-content" class="card hidden">
+  <h2>Content Quiz</h2>
+  <div id="content-area"></div>
+</section>
+
+<!-- TIMELINE -->
+<section id="screen-timeline" class="card hidden">
+  <h2>Timeline Builder</h2>
+  <p class="muted">Type the year for each event. Then press <strong>Sort by my years</strong> to arrange the list, and <strong>Check my timeline</strong> when every year is filled in.</p>
+  <div id="timeline-list"></div>
+  <button class="secondary" onclick="sortByYears()">Sort by my years</button>
+  <button onclick="checkTimeline()">Check my timeline</button>
+  <button class="secondary" onclick="startTimeline()">New shuffle</button>
+  <div id="timeline-result" class="feedback hidden"></div>
+</section>
+
+<!-- PROGRESS -->
+<section id="screen-progress" class="card hidden">
+  <h2>My Progress on This Device</h2>
+  <div id="progress-list"></div>
+  <button onclick="showScreen('screen-menu')">Back to Menu</button>
+</section>
+
+</main>
+
+<script>
+// ============================================================
+// TEACHER SETUP: paste your Apps Script web app URL below.
+// Leave the placeholder in place to test the app without logging.
+// ============================================================
+const SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_URL_HERE";
+
+// ============================================================
+// VOCABULARY: history terms and test-language words
+// ============================================================
+const VOCAB = [
+  { term: "Incumbent", def: "A person who currently holds an office" },
+  { term: "Precedent", def: "An earlier decision or action used as a guide for later ones" },
+  { term: "Ratify", def: "To formally approve a treaty, law, or constitution" },
+  { term: "Repeal", def: "To officially cancel a law" },
+  { term: "Veto", def: "The power of a president or governor to reject a bill passed by the legislature" },
+  { term: "Excerpt", def: "A short portion taken from a longer text" },
+  { term: "Primary source", def: "A document or object created during the time period being studied" },
+  { term: "Assert", def: "To state something strongly as true" },
+  { term: "Infer", def: "To reach a conclusion based on evidence, even if it is not stated directly" },
+  { term: "Imply", def: "To suggest something without saying it directly" },
+  { term: "Justify", def: "To give reasons showing that an action or belief is right" },
+  { term: "Undermine", def: "To weaken something gradually" },
+  { term: "Dissent", def: "To openly disagree with an official position or majority view" },
+  { term: "Consent", def: "Agreement or permission, especially given by the governed" },
+  { term: "Faction", def: "A group within a larger group that pursues its own interests" },
+  { term: "Ideology", def: "A set of ideas about how society and government should work" },
+  { term: "Legitimacy", def: "The rightful authority of a government in the eyes of its people" },
+  { term: "Sovereignty", def: "The supreme authority to govern" },
+  { term: "Concede", def: "To admit that something is true, or to give up a point in an argument" },
+  { term: "Suffrage", def: "The right to vote" },
+  { term: "Alliance", def: "An agreement between nations or groups to work together" },
+  { term: "Enforce", def: "To make sure people follow a law" },
+  { term: "Authorize", def: "To give official permission for an action" },
+  { term: "Nullify", def: "To declare a law void within a state or region" },
+  { term: "Secede", def: "To formally withdraw from a union" },
+  { term: "Cede", def: "To give up territory, usually through a treaty" },
+  { term: "Commerce", def: "The buying, selling, and trading of goods across areas" },
+  { term: "Monopoly", def: "Exclusive control of a product, service, or market" },
+  { term: "Speculator", def: "A person who buys land or goods hoping to profit from a rise in value" },
+  { term: "Sectionalism", def: "Loyalty to one region's interests over the interests of the nation" },
+  { term: "Nationalism", def: "Strong pride in and loyalty to one's nation" },
+  { term: "Reform movement", def: "An organized effort to change a part of society" },
+  { term: "Utopian", def: "Aiming for a perfect society" },
+  { term: "Transcendentalism", def: "A philosophy that stresses intuition, nature, and individual conscience" },
+  { term: "Mercantilism", def: "An economic system in which a mother country controls colonial trade to build wealth" },
+  { term: "Market revolution", def: "The shift toward market-based production, wage labor, and faster transportation" },
+  { term: "Implied powers", def: "Powers not listed in the Constitution but reasonably needed to carry out listed powers" },
+  { term: "Enumerated powers", def: "Powers specifically listed in the Constitution" },
+  { term: "Proclamation", def: "An official public announcement made by a government leader" },
+  { term: "Reservation", def: "Land set aside by the government for Native American nations" },
+  { term: "EXCEPT (in a question)", def: "Signals that you must choose the one answer that does NOT fit the question" },
+  { term: "BEST / MOST directly (in a question)", def: "Signals that you must choose the answer that fits the question most closely, even if others partly fit" }
+];
+
+// ============================================================
+// CONTENT QUESTIONS (practice questions written for this app)
+// ============================================================
+const CONTENT = [
+  { q: "Which power did the Supreme Court establish in Marbury v. Madison (1803)?", options: ["Judicial review", "Impeachment of the president", "Power to tax the states", "Veto over treaties"], answer: 0, explain: "Marbury v. Madison established judicial review, the Court's power to declare laws unconstitutional." },
+  { q: "The Embargo Act of 1807 was passed under which president?", options: ["John Adams", "Thomas Jefferson", "James Madison", "James Monroe"], answer: 1, explain: "Jefferson signed the Embargo Act, which stopped most American foreign trade." },
+  { q: "Most War Hawks who pushed for war in 1812 came from which region?", options: ["New England", "The South and West", "The Middle Atlantic states", "Canada"], answer: 1, explain: "War Hawks were mostly from the South and West, where people wanted land and worried about Native American conflict." },
+  { q: "The Hartford Convention was a meeting of opponents of the War of 1812 from which region?", options: ["The South", "The West", "New England", "The Middle Atlantic"], answer: 2, explain: "Federalists from New England met at Hartford and considered their options, including secession." },
+  { q: "The War of 1812 ended with which treaty?", options: ["Treaty of Paris", "Treaty of Ghent", "Treaty of Guadalupe Hidalgo", "Treaty of Versailles"], answer: 1, explain: "The Treaty of Ghent (1814) ended the war and restored prewar boundaries." },
+  { q: "The Missouri Compromise admitted Missouri as a slave state and admitted which state as a free state?", options: ["Texas", "Maine", "Florida", "Arkansas"], answer: 1, explain: "Maine entered as a free state to balance Missouri, and the compromise banned slavery north of 36°30' in the Louisiana Territory." },
+  { q: "The Monroe Doctrine warned European nations against", options: ["trading with the United States", "colonizing or interfering in the Western Hemisphere", "sending immigrants to the Americas", "building canals in Panama"], answer: 1, explain: "The Monroe Doctrine (1823) declared that the Americas were closed to new European colonization." },
+  { q: "Which candidate became president after the 1824 election was decided in the House of Representatives?", options: ["Andrew Jackson", "John Quincy Adams", "Henry Clay", "William Crawford"], answer: 1, explain: "The House chose John Quincy Adams, who had won fewer popular and electoral votes than Jackson." },
+  { q: "The spoils system refers to", options: ["giving government jobs to political supporters", "dividing the country into states", "collecting taxes on imports", "selling public land to settlers"], answer: 0, explain: "Under the spoils system, winning politicians rewarded their supporters with federal jobs." },
+  { q: "Which state declared the federal tariffs of 1828 and 1832 void within its borders?", options: ["Georgia", "Virginia", "South Carolina", "Massachusetts"], answer: 2, explain: "South Carolina used nullification against the tariffs, which led to the Nullification Crisis of 1832." },
+  { q: "The forced removal of the Cherokee to Indian Territory is known as the", options: ["Trail of Tears", "Long March", "Oregon Trail", "Battle of Horseshoe Bend"], answer: 0, explain: "The Trail of Tears (1838–1839) forced thousands of Cherokee west, and many died along the way." },
+  { q: "In Worcester v. Georgia (1832), the Supreme Court ruled that", options: ["Georgia could enforce its laws on Cherokee lands", "Georgia laws did not apply within Cherokee lands", "the Cherokee must give up their land", "Congress could not make treaties with Native nations"], answer: 1, explain: "The Court ruled Georgia had no authority over Cherokee lands. President Jackson did not enforce the decision." },
+  { q: "President Jackson's 1832 veto was aimed at which institution?", options: ["The Second Bank of the United States", "The Supreme Court", "The Erie Canal Company", "The Federal Reserve"], answer: 0, explain: "Jackson vetoed the recharter of the Second Bank of the United States, which he saw as favoring the wealthy." },
+  { q: "The Erie Canal connected the Hudson River to which body of water?", options: ["Mississippi River", "Gulf of Mexico", "Great Lakes", "Chesapeake Bay"], answer: 2, explain: "The Erie Canal linked the Hudson River at Albany to Lake Erie at Buffalo, which connected New York City to the Great Lakes." },
+  { q: "Eli Whitney's cotton gin made which crop more profitable to grow in the South?", options: ["Tobacco", "Cotton", "Rice", "Sugar"], answer: 1, explain: "The cotton gin separated cotton fiber from seeds quickly, which made cotton far more profitable and increased demand for enslaved labor." },
+  { q: "The young women who worked in the Lowell mills were mainly", options: ["married mothers", "enslaved people", "young, unmarried women from New England farm families", "immigrants from Germany"], answer: 2, explain: "Most Lowell workers were young, unmarried women from rural New England families who worked for wages for a few years." },
+  { q: "The Second Great Awakening emphasized", options: ["strict Puritan predestination", "personal conversion and social reform", "the separation of church and state only", "Catholic missionary work"], answer: 1, explain: "The Second Great Awakening stressed personal salvation and encouraged people to reform society." },
+  { q: "The Seneca Falls Declaration of Sentiments was modeled on which document?", options: ["The Constitution", "The Declaration of Independence", "The Bill of Rights", "The Mayflower Compact"], answer: 1, explain: "The Declaration of Sentiments copied the structure and wording of the Declaration of Independence to argue for women's rights." },
+  { q: "Which writer is most closely associated with transcendentalism?", options: ["Ralph Waldo Emerson", "Mark Twain", "Edgar Allan Poe", "Nathaniel Hawthorne"], answer: 0, explain: "Ralph Waldo Emerson was the leading voice of transcendentalism, with essays such as Self-Reliance." },
+  { q: "Samuel Morse's telegraph line of 1844 first connected which two cities?", options: ["New York and Boston", "Washington and Baltimore", "Philadelphia and Pittsburgh", "Chicago and St. Louis"], answer: 1, explain: "Morse's first public telegraph message ran between Washington and Baltimore in 1844." },
+  { q: "Cyrus McCormick is best known for inventing the", options: ["steamboat", "mechanical reaper", "sewing machine", "telegraph"], answer: 1, explain: "McCormick's mechanical reaper helped farmers harvest grain much faster." },
+  { q: "Robert Fulton is associated with which invention?", options: ["steamboat", "sewing machine", "cotton gin", "telegraph"], answer: 0, explain: "Fulton's steamboat Clermont made regular river travel practical in 1807." },
+  { q: "The market revolution is best described as", options: ["a return to subsistence farming", "a shift toward market-based production, wage labor, and transportation", "the end of slavery in the North", "the rise of mercantilism"], answer: 1, explain: "The market revolution changed how Americans produced and sold goods, moving them toward markets, wage work, and faster transportation." },
+  { q: "Mercantilism is an economic system in which", options: ["colonies trade freely with all nations", "a mother country controls colonial trade to build wealth", "workers own the factories", "the government owns all land"], answer: 1, explain: "Under mercantilism, a mother country tried to export more than it imported and keep colonial trade under its control." },
+  { q: "Which term describes loyalty to one region's interests over the nation's?", options: ["Sectionalism", "Nationalism", "Federalism", "Abolitionism"], answer: 0, explain: "Sectionalism put regional interests first and grew stronger between 1800 and 1848." },
+  { q: "Which Jacksonian policy authorized the movement of Native Americans west of the Mississippi?", options: ["Indian Removal Act", "Tariff of 1828", "Homestead Act", "Embargo Act"], answer: 0, explain: "The Indian Removal Act of 1830 authorized the government to exchange land in the East for land in the West." }
+];
+
+// ============================================================
+// TIMELINE EVENTS (unique years, 1800–1850)
+// ============================================================
+const EVENTS = [
+  { event: "Louisiana Purchase", year: 1803 },
+  { event: "Embargo Act passed", year: 1807 },
+  { event: "War of 1812 begins", year: 1812 },
+  { event: "Treaty of Ghent ends the War of 1812", year: 1814 },
+  { event: "Missouri Compromise", year: 1820 },
+  { event: "Monroe Doctrine announced", year: 1823 },
+  { event: "Erie Canal opens", year: 1825 },
+  { event: "Tariff of 1828 (Tariff of Abominations)", year: 1828 },
+  { event: "Indian Removal Act", year: 1830 },
+  { event: "Nullification Crisis", year: 1832 },
+  { event: "Seneca Falls Convention", year: 1848 }
+];
+
+// ============================================================
+// Utilities
+// ============================================================
+let student = JSON.parse(localStorage.getItem("apush_student") || "null");
+let timelineItems = [];
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function showScreen(id) {
+  ["screen-login","screen-menu","screen-vocab","screen-content","screen-timeline","screen-progress"]
+    .forEach(s => document.getElementById(s).classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+  window.scrollTo(0, 0);
+}
+
+function saveLogin() {
+  const name = document.getElementById("name").value.trim().replace(/\s+/g, " ");
+  const period = document.getElementById("period").value.trim();
+  const err = document.getElementById("login-error");
+  if (name.split(" ").length < 2) { err.textContent = "Please enter your first and last name."; return; }
+  if (!period) { err.textContent = "Please enter your period."; return; }
+  student = { name, period };
+  localStorage.setItem("apush_student", JSON.stringify(student));
+  err.textContent = "";
+  enterMenu();
+}
+
+function logout() {
+  student = null;
+  localStorage.removeItem("apush_student");
+  document.getElementById("name").value = "";
+  document.getElementById("period").value = "";
+  showScreen("screen-login");
+}
+
+function enterMenu() {
+  document.getElementById("greeting").textContent = "Hi, " + student.name.split(" ")[0] + "!";
+  showScreen("screen-menu");
+}
+
+function recordLocal(activity, score, total) {
+  const history = JSON.parse(localStorage.getItem("apush_history") || "[]");
+  history.push({ activity, score, total, date: new Date().toLocaleString() });
+  localStorage.setItem("apush_history", JSON.stringify(history));
+}
+
+// Sends results to the teacher's Google Sheet
+function recordActivity(activity, score, total) {
+  recordLocal(activity, score, total);
+  if (!SCRIPT_URL.startsWith("http")) return "demo";
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify({ name: student.name, period: student.period, activity, score, total })
+  }).catch(() => {});
+  return "sent";
+}
+
+function showProgress() {
+  const history = JSON.parse(localStorage.getItem("apush_history") || "[]");
+  const list = document.getElementById("progress-list");
+  if (history.length === 0) {
+    list.innerHTML = "<p>You have not finished any activities on this device yet.</p>";
+  } else {
+    list.innerHTML = history.slice().reverse().map(h =>
+      `<p><strong>${h.activity}</strong>: ${h.score} / ${h.total} <span class="muted">(${h.date})</span></p>`).join("");
+  }
+  showScreen("screen-progress");
+}
+
+// ============================================================
+// Multiple-choice quiz engine (vocabulary and content)
+// ============================================================
+function buildVocabQuestions() {
+  return shuffle(VOCAB).slice(0, 15).map(v => {
+    const distractors = shuffle(VOCAB.filter(x => x.term !== v.term)).slice(0, 3).map(x => x.def);
+    const choices = shuffle([v.def, ...distractors]);
+    return { q: `What does "${v.term}" mean?`, choices, correctText: v.def, explain: `${v.term}: ${v.def}` };
+  });
+}
+
+function buildContentQuestions() {
+  return shuffle(CONTENT).slice(0, 12).map(c => ({
+    q: c.q,
+    choices: c.options,
+    correctText: c.options[c.answer],
+    explain: c.explain
+  }));
+}
+
+function runQuiz(containerId, questions, activityName) {
+  const area = document.getElementById(containerId);
+  let idx = 0, score = 0;
+
+  function renderQuestion() {
+    const item = questions[idx];
+    area.innerHTML = `
+      <div class="progress">Question ${idx + 1} of ${questions.length} &middot; Score: ${score}</div>
+      <p style="font-size:1.1rem"><strong>${item.q}</strong></p>
+      <div id="choices"></div>
+      <div id="fb" class="feedback hidden"></div>
+      <button id="next" class="hidden">${idx + 1 < questions.length ? "Next question" : "See my score"}</button>`;
+    const box = document.getElementById("choices");
+    item.choices.forEach(text => {
+      const b = document.createElement("button");
+      b.className = "choice";
+      b.textContent = text;
+      b.onclick = () => choose(b, text, item);
+      box.appendChild(b);
+    });
+  }
+
+  function choose(btn, text, item) {
+    const buttons = document.querySelectorAll("#choices button");
+    buttons.forEach(b => b.disabled = true);
+    const correct = text === item.correctText;
+    if (correct) { score++; btn.classList.add("correct"); }
+    else {
+      btn.classList.add("wrong");
+      buttons.forEach(b => { if (b.textContent === item.correctText) b.classList.add("correct"); });
+    }
+    const fb = document.getElementById("fb");
+    fb.classList.remove("hidden");
+    fb.innerHTML = (correct ? "<strong>Correct.</strong> " : "<strong>Not quite.</strong> ") + item.explain;
+    document.getElementById("next").classList.remove("hidden");
+    document.getElementById("next").onclick = () => {
+      idx++;
+      if (idx < questions.length) renderQuestion();
+      else finish();
+    };
+  }
+
+  function finish() {
+    const status = recordActivity(activityName, score, questions.length);
+    const note = status === "demo"
+      ? "<p class='muted'>Demo mode: results are saved on this device only.</p>"
+      : "<p class='muted'>Your result has been sent to your teacher.</p>";
+    area.innerHTML = `
+      <div class="score-big">${score} / ${questions.length}</div>
+      <p>${score >= questions.length * 0.8 ? "Excellent work. You are ready for this section." : "Review the items you missed, then try again for a higher score."}</p>
+      ${note}
+      <button onclick="showScreen('screen-menu')">Back to Menu</button>
+      <button class="secondary" onclick="${containerId === 'vocab-area' ? 'startVocab()' : 'startContent()'}">Try again</button>`;
+  }
+
+  renderQuestion();
+}
+
+function startVocab() {
+  document.getElementById("screen-vocab").classList.remove("hidden");
+  runQuiz("vocab-area", buildVocabQuestions(), "Vocabulary Quiz");
+}
+
+function startContent() {
+  document.getElementById("screen-content").classList.remove("hidden");
+  runQuiz("content-area", buildContentQuestions(), "Content Quiz");
+}
+
+// ============================================================
+// Timeline builder
+// ============================================================
+function startTimeline() {
+  timelineItems = shuffle(EVENTS).map(e => ({ ...e, entered: "" }));
+  document.getElementById("timeline-result").classList.add("hidden");
+  renderTimeline();
+}
+
+function renderTimeline() {
+  const list = document.getElementById("timeline-list");
+  list.innerHTML = "";
+  timelineItems.forEach((item, i) => {
+    const div = document.createElement("div");
+    div.className = "event";
+    div.dataset.index = i;
+    div.innerHTML = `
+      <div class="label">${item.event}</div>
+      <input type="number" min="1790" max="1860" placeholder="Year" value="${item.entered}">`;
+    div.querySelector("input").addEventListener("input", (ev) => {
+      timelineItems[i].entered = ev.target.value;
+    });
+    list.appendChild(div);
+  });
+}
+
+function sortByYears() {
+  const missing = timelineItems.some(t => !t.entered);
+  if (missing) {
+    document.getElementById("timeline-result").classList.remove("hidden");
+    document.getElementById("timeline-result").innerHTML = "<strong>Fill in a year for every event</strong> before you sort.";
+    return;
+  }
+  timelineItems.sort((a, b) => Number(a.entered) - Number(b.entered));
+  renderTimeline();
+}
+
+function checkTimeline() {
+  const result = document.getElementById("timeline-result");
+  if (timelineItems.some(t => !t.entered)) {
+    result.classList.remove("hidden");
+    result.innerHTML = "<strong>Fill in a year for every event</strong> before you check.";
+    return;
+  }
+  let correctCount = 0;
+  const cards = document.querySelectorAll("#timeline-list .event");
+  timelineItems.forEach((item, i) => {
+    const card = cards[i];
+    const right = Number(item.entered) === item.year;
+    if (right) correctCount++;
+    card.classList.add(right ? "right" : "wrong");
+    if (!right) card.querySelector(".label").innerHTML += ` <span class="muted">(correct year: ${item.year})</span>`;
+  });
+  const orderOK = timelineItems.every((t, i, arr) => i === 0 || arr[i-1].year <= t.year);
+  const status = recordActivity("Timeline Builder", correctCount, EVENTS.length);
+  const note = status === "demo" ? "Demo mode: saved on this device only." : "Your result has been sent to your teacher.";
+  result.classList.remove("hidden");
+  result.innerHTML = `<div class="score-big">${correctCount} / ${EVENTS.length} correct years</div>
+    <p>${orderOK ? "Your events are in the correct order." : "Sort by your years to see the order, then review the events you missed."}</p>
+    <p class="muted">${note}</p>`;
+}
+
+// ============================================================
+// Startup
+// ============================================================
+if (student) { enterMenu(); } else { showScreen("screen-login"); }
+</script>
+</body>
+</html>
